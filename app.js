@@ -109,15 +109,15 @@ function cardioDistanceKm(name, seconds){
 /* ===================== STATE & STORAGE ===================== */
 const KEY="evolve_v1";
 const PROFILE_PHOTO_KEY="evolve_profile_photo_v1"; /* separate local-only photo; deliberately not included in backup codes */
-const PROGRESS_PHOTOS_KEY="evolve_progress_photos_v1"; /* v3.31: local-only progress gallery; never in backups */
-const COACH_KEY_KEY="evolve_coach_key_v1"; /* v3.31: OpenRouter API key — local-only, never in any backup, never sent anywhere except OpenRouter */
+const PROGRESS_PHOTOS_KEY="evolve_progress_photos_v1"; /* v3.71: local-only progress gallery; never in backups */
+const COACH_KEY_KEY="evolve_coach_key_v1"; /* v3.71: OpenRouter API key — local-only, never in any backup, never sent anywhere except OpenRouter */
 const COACH_KEY_MODE_KEY="evolve_coach_key_mode_v1"; /* device|session */
 const COACH_KEY_SESSION_KEY="evolve_coach_key_session_v1"; /* session-only storage for the Coach key */
 const MAX_STATE_BYTES=4.5*1024*1024;
 const MAX_IMPORT_BYTES=4*1024*1024;
 const MAX_IMAGE_FILE_BYTES=15*1024*1024;
 const MAX_PROGRESS_PHOTOS=60;
-const SECURITY_NOTICE_VERSION="2026-06-security-test-2";
+const SECURITY_NOTICE_VERSION="2026-06-prerelease-2";
 const DEFAULT_DATA = {
   profile:null, /* {name,sex,age,heightCm,weightKg,activity,goal,goalWeightKg} */
   targets:null, /* {calories,protein,carbs,fat,water} */
@@ -129,8 +129,8 @@ const DEFAULT_DATA = {
   favMachines:[], /* legacy machine names (migrated into favExercises) */
   favExercises:[], /* GLOBAL favourites: any exercise/cardio name */
   favWorkouts:[], /* {id,name,exercises:[{name,group}],cardio:{name,met,ic}|null,cardioPos:"start"|"end"} */
-  routines:[], /* v3.31: multi-day programs — {id,name,note,days:[{label,exercises:[{name,group}]}]} */
-  usualSets:{}, /* v3.31: per-exercise saved "usual" — { "<exercise name>": {kg, reps} } used to pre-fill sets */
+  routines:[], /* v3.71: multi-day programs — {id,name,note,days:[{label,exercises:[{name,group}]}]} */
+  usualSets:{}, /* v3.71: per-exercise saved "usual" — { "<exercise name>": {kg, reps} } used to pre-fill sets */
   weeklyPlan:null, /* {weekStart, days:{Mon:{type,label,done}|null,...}, cardioPref} */
   cardio:[],     /* {id,date,name,type,seconds,kcal,distanceKm} */
   log:{},       /* date -> {food:[], water:0, burned:[]} */
@@ -197,7 +197,7 @@ function migrate(d){
   if(d.prefs.targetMode!=="manual") d.prefs.targetMode="auto"; /* auto = formula targets; manual = user-set calories & macros */
   /* v3.22 — new preference defaults (kept here so existing users carry over untouched) */
   if(!(Number(d.prefs.restDefault)>0)) d.prefs.restDefault=90;       /* default rest-timer length (seconds) */
-  if(!d.prefs.headingFont) d.prefs.headingFont="classic";            /* v3.31: heading font style (1.0: Classic default) */
+  if(!d.prefs.headingFont) d.prefs.headingFont="classic";            /* v3.71: heading font style (1.0: Classic default) */
   /* 1.0 — adopt Classic (Bebas) as the app's display font globally. Existing
      installs still on the OLD "modern" default are moved to "classic" ONCE
      (guarded by a flag) so the change reaches them; a deliberate later choice
@@ -207,9 +207,9 @@ function migrate(d){
     if(d.prefs.headingFont==="modern") d.prefs.headingFont="classic";
     d.meta.classicFontApplied=true;
   }
-  if(typeof d.prefs.coachConsent!=="boolean") d.prefs.coachConsent=false; /* v3.31: AI Coach privacy consent */
+  if(typeof d.prefs.coachConsent!=="boolean") d.prefs.coachConsent=false; /* v3.71: AI Coach privacy consent */
   if(!d.prefs.coachModel) d.prefs.coachModel="openrouter/free";
-  /* v3.31: retire model slugs OpenRouter has dropped, and move the old default to the free router */
+  /* v3.71: retire model slugs OpenRouter has dropped, and move the old default to the free router */
   const DEAD_COACH_MODELS=["google/gemini-2.0-flash-exp:free","google/gemini-flash-1.5-exp:free","deepseek/deepseek-chat-v3-0324:free"];
   if(DEAD_COACH_MODELS.indexOf(d.prefs.coachModel)>=0) d.prefs.coachModel="openrouter/free";
   if(typeof d.prefs.restBeep!=="boolean") d.prefs.restBeep=true;     /* beep when rest ends */
@@ -219,9 +219,9 @@ function migrate(d){
   if(!(Number(d.prefs.waterStep)>0)) d.prefs.waterStep=250;          /* +1 tap water amount (ml) */
   if(!["home","train","fuel","stats","more"].includes(d.prefs.startTab)) d.prefs.startTab="home"; /* tab shown on open */
   if(typeof d.prefs.showHelpBars!=="boolean") d.prefs.showHelpBars=true; /* show the per-tab "How this page works" bars by default */
-  /* v3.31 */
+  /* v3.71 */
   if(!Array.isArray(d.routines)) d.routines=[]; /* saved multi-day programs */
-  if(!d.usualSets || typeof d.usualSets!=="object" || Array.isArray(d.usualSets)) d.usualSets={}; /* v3.31: per-exercise usual sets */
+  if(!d.usualSets || typeof d.usualSets!=="object" || Array.isArray(d.usualSets)) d.usualSets={}; /* v3.71: per-exercise usual sets */
   if(Array.isArray(d.customFoods)) d.customFoods.forEach(f=>{ if(f && typeof f.cat!=="string") f.cat=""; }); /* optional category tag on custom foods */
   if(!d.statResets || typeof d.statResets!=="object") d.statResets={};
   if(!d.meta || typeof d.meta!=="object") d.meta={};
@@ -279,7 +279,7 @@ function applyTheme(id){
 }
 applyTheme((DATA.prefs&&DATA.prefs.theme)||"ember");
 
-/* v3.31 — heading font styles, switchable in Settings → Preferences */
+/* v3.71 — heading font styles, switchable in Settings → Preferences */
 const HEADING_FONTS={
   modern:{label:"Modern",   stack:'"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif', spacing:"-0.01em", sample:"Clean, rounded sans-serif — the most legible option."},
   bold:  {label:"Bold",     stack:'"Archivo","Inter",sans-serif',                                          spacing:"-0.02em", sample:"Wide, heavy and sporty — strong without shouting."},
@@ -391,7 +391,7 @@ function checkBadges(){
 /* ===================== UI HELPERS ===================== */
 const $=s=>document.querySelector(s);
 
-/* v3.31 — prevent zoom (pinch + double-tap). iOS Safari ignores
+/* v3.71 — prevent zoom (pinch + double-tap). iOS Safari ignores
    user-scalable=no, so block its gesture events and rapid double-taps.
    Scrolling, single taps and normal interactions are unaffected. */
 (function preventZoom(){
@@ -477,7 +477,7 @@ function resizeAndSaveProfilePhoto(file){
   reader.readAsDataURL(file);
 }
 
-/* v3.31 — progress photos: local-only, never backed up, like the profile photo */
+/* v3.71 — progress photos: local-only, never backed up, like the profile photo */
 function getProgressPhotos(){
   try{
     const raw=localStorage.getItem(PROGRESS_PHOTOS_KEY);
@@ -977,21 +977,22 @@ function updateHeader(){
 /* ===================== PER-TAB HELP ===================== */
 const TAB_HELP={
   home:{t:"Home",b:`<div class="help-body">
-    <p class="help-lead">Your day at a glance — start training, check your fuel, and see your numbers.</p>
+    <p class="help-lead">Your training day at a glance — start a session, check fuel, and browse your history.</p>
     <div class="help-row"><b>Today card</b><span>Start your planned session, a quick workout, or plan your week.</span></div>
-    <div class="help-row"><b>Week strip</b><span>Tap a day to start it; <b>Edit</b> opens the planner. (Shown once a week is planned.)</span></div>
-    <div class="help-row"><b>Quick actions</b><span>Quick start, Favourites, Cardio and Log food — one tap each.</span></div>
+    <div class="help-row"><b>Week strip</b><span>Tap a day to start it; <b>Edit</b> opens the planner.</span></div>
+    <div class="help-row"><b>Quick actions</b><span>Quick start, Starred sessions, Cardio and Log food — one tap each.</span></div>
     <div class="help-row"><b>Fuel today</b><span>Calories left, protein and water; tap <b>Open</b> for the full Fuel tab.</span></div>
     <div class="help-row"><b>At a glance</b><span>Streak, workouts and volume — tap to jump to Progress.</span></div>
-    <div class="help-row"><b>Bodyweight</b><span>Log today's weight in one tap.</span></div></div>`},
+    <div class="help-row"><b>Bodyweight</b><span>Log today's weight in one tap.</span></div>
+    <div class="help-row"><b>Session history</b><span>Browse completed sessions with ← → arrows. Tap VIEW on any session to see every set and weight logged — and REPEAT it.</span></div></div>`},
   train:{t:"Train",b:`<div class="help-body">
-    <p class="help-lead">Your workout library — build a session, run a saved program, or pick a ready-made one.</p>
+    <p class="help-lead">Your workout library — select a muscle group, run a preset, or build a mega session.</p>
     <div class="help-row"><b>Gym / Home</b><span>Toggle where you're training; the exercise pool changes to match.</span></div>
-    <div class="help-row"><b>Muscle tiles</b><span>Tap one to build a workout — set how many exercises, focus a sub-muscle, swap any, then Start.</span></div>
-    <div class="help-row"><b>📋 Programs</b><span>Save a multi-day plan (e.g. Push/Pull/Legs). Start from a template or build your own, then start any day with one tap. (Favourites = one workout; Programs = a whole week.)</span></div>
-    <div class="help-row"><b>Mega</b><span>Mixes several muscle groups in one session, with optional cardio.</span></div>
-    <div class="help-row"><b>★ Saved workouts</b><span>Sessions you've saved as favourites — tap Start to run one again.</span></div>
-    <div class="help-row"><b>Favourites ★</b><span>Star any exercise, then the ★ pill builds a session from your favourites.</span></div></div>`},
+    <div class="help-row"><b>Muscle groups</b><span>Tap a muscle to build a session — coloured bar shows which muscle. Set moves, focus a sub-muscle, swap any, then Start.</span></div>
+    <div class="help-row"><b>Preset sessions</b><span>Push, Pull, Legs, Upper, Lower — one tap to start. Exercise count shown on the right.</span></div>
+    <div class="help-row"><b>Mega session</b><span>Mixes several muscle groups in one session, with optional cardio.</span></div>
+    <div class="help-row"><b>Programs</b><span>Multi-day plans (PPL, Upper/Lower, Full Body). Start from a template or build your own.</span></div>
+    <div class="help-row"><b>Starred sessions</b><span>Sessions you've saved — tap to run again or repeat the exact weights and sets.</span></div></div>`},
   cardio:{t:"Cardio",b:`<div class="help-body">
     <p class="help-lead">Track any cardio and log it to your day.</p>
     <div class="help-row"><b>Activity tiles</b><span>Tap one to set it up; each shows a rough calories &amp; distance estimate per 30 min.</span></div>
@@ -1151,26 +1152,124 @@ function renderHome(){
     b.appendChild(wc);
   }
 
-  /* ---- today's completed activity ---- */
-  const cardioToday=DATA.cardio.filter(c=>c.date===todayISO());
-  if(doneToday.length||cardioToday.length){
-    b.appendChild(el("div","sect-h",`<h3>Completed today</h3>`));
-    const card=el("div","card");
-    doneToday.forEach(w=>{
-      const r=el("div","lrow");
-      r.innerHTML=`<div class="ico">✅</div><div class="main"><div class="t">${esc(w.title)}</div>
-        <div class="s">${w.exercises.length} exercise${w.exercises.length===1?"":"s"} · ${volStr(w.volume)}${w.prs&&w.prs.length?` · ${w.prs.length} PR${w.prs.length>1?"s":""} 🏅`:""}</div></div>`;
-      const del=el("button","del","×"); del.addEventListener("click",()=>deleteWorkout(w.id,renderHome));
-      r.appendChild(del); card.appendChild(r);
+  /* ---- completed sessions — date-navigable, tappable for full history ---- */
+  let homeViewDate = todayISO();
+  function renderCompletedSection(){
+    const existing=$("#hm_completed_wrap"); if(existing)existing.remove();
+    const isToday = homeViewDate===todayISO();
+    const dayW = DATA.workouts.filter(w=>w.date===homeViewDate);
+    const dayC = DATA.cardio.filter(c=>c.date===homeViewDate);
+    const wrap=el("div",""); wrap.id="hm_completed_wrap";
+    /* date nav header */
+    const sh=el("div","sect-h"); sh.style.alignItems="center";
+    sh.innerHTML=`<div style="font-family:var(--font-disp);font-size:20px;font-weight:900;letter-spacing:-.01em">${isToday?"COMPLETED TODAY":shortDate(homeViewDate).toUpperCase()}</div>
+      <div style="display:flex;gap:1px">
+        <button class="btn sm" id="hm_day_prev" style="padding:6px 12px">←</button>
+        <button class="btn sm" id="hm_day_next" style="padding:6px 12px;${isToday?"opacity:.25;pointer-events:none":""}">→</button>
+      </div>`;
+    wrap.appendChild(sh);
+    if(dayW.length||dayC.length){
+      const card=el("div","card");
+      dayW.forEach(w=>{
+        const r=el("div","lrow"); r.style.cursor="pointer";
+        const vol=w.volume>0?volStr(w.volume):"—";
+        const prBit=w.prs&&w.prs.length?` · 🏅 ${w.prs.length} PR${w.prs.length>1?"s":""}` :"";
+        r.innerHTML=`<div class="ico" style="border-radius:0;border:1px solid var(--text);background:var(--text);color:var(--ink);font-weight:900;font-size:12px">✓</div>
+          <div class="main">
+            <div class="t" style="font-weight:700;letter-spacing:.02em;text-transform:uppercase">${esc(w.title)}</div>
+            <div class="s">${w.exercises.length} EXERCISES · ${vol}${w.durationMin?` · ${w.durationMin} MIN`:""}${prBit}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <button class="btn sm" data-hist-id="${w.id}" style="font-size:9px;padding:6px 10px;letter-spacing:.1em">VIEW</button>
+            <button class="del" data-del-id="${w.id}">×</button>
+          </div>`;
+        card.appendChild(r);
+      });
+      dayC.forEach(c=>{
+        const r=el("div","lrow");
+        r.innerHTML=`<div class="ico" style="border-radius:0;border:1px solid var(--line)">${(CARDIO.find(x=>x.n===c.name)||{}).ic||"🏃"}</div>
+          <div class="main">
+            <div class="t" style="font-weight:700;letter-spacing:.02em;text-transform:uppercase">${esc(c.name)}</div>
+            <div class="s">${fmtClock(c.seconds*1000)} · ${eVal(c.kcal)} ${eUnit()}</div>
+          </div>`;
+        card.appendChild(r);
+      });
+      wrap.appendChild(card);
+      wrap.querySelectorAll("[data-hist-id]").forEach(btn=>btn.addEventListener("click",()=>{
+        const wk=DATA.workouts.find(x=>String(x.id)===String(btn.dataset.histId)); if(!wk)return;
+        openWorkoutDetail(wk);
+      }));
+      wrap.querySelectorAll("[data-del-id]").forEach(btn=>btn.addEventListener("click",()=>{
+        deleteWorkout(btn.dataset.delId,()=>{ renderCompletedSection(); });
+      }));
+    } else {
+      const empty=el("div","empty"); empty.style.cssText="margin-top:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase";
+      empty.textContent=isToday?"NO SESSIONS YET TODAY.":"NOTHING LOGGED THIS DAY.";
+      wrap.appendChild(empty);
+    }
+    b.appendChild(wrap);
+    const prevBtn=$("#hm_day_prev"), nextBtn=$("#hm_day_next");
+    if(prevBtn) prevBtn.addEventListener("click",()=>{
+      const d=new Date(homeViewDate); d.setDate(d.getDate()-1); homeViewDate=todayISO(d); renderCompletedSection();
     });
-    cardioToday.forEach(c=>{
-      const r=el("div","lrow");
-      r.innerHTML=`<div class="ico">${(CARDIO.find(x=>x.n===c.name)||{}).ic||"🏃"}</div><div class="main"><div class="t">${esc(c.name)}</div>
-        <div class="s">${fmtClock(c.seconds*1000)} · ${eVal(c.kcal)} ${eUnit()}</div></div>`;
-      card.appendChild(r);
+    if(nextBtn&&!isToday) nextBtn.addEventListener("click",()=>{
+      const d=new Date(homeViewDate); d.setDate(d.getDate()+1); homeViewDate=todayISO(d); renderCompletedSection();
     });
-    b.appendChild(card);
   }
+  renderCompletedSection();
+}
+
+/* ── openWorkoutDetail: tap VIEW on a completed session to see the full set log ── */
+function openWorkoutDetail(wk){
+  if(!wk)return;
+  const prs=wk.prs||[];
+  const totalSets=wk.exercises.reduce((a,e)=>a+e.sets.filter(s=>!s.warmup&&(+s.kg>0||+s.reps>0)).length,0);
+  const exRows=wk.exercises.map(ex=>{
+    const sets=ex.sets.filter(s=>!s.warmup&&(+s.kg>0||+s.reps>0));
+    if(!sets.length) return "";
+    const isPR=prs.some(p=>p.name===ex.name);
+    const setLines=sets.map((s,i)=>`<div class="sum-set-row">
+      <span class="sum-set-n">${i+1}</span>
+      <span class="sum-set-val">${+s.kg>0?liftStr(+s.kg):"—"} × ${s.reps||"—"}</span>
+      ${s.rir?`<span class="sum-set-rir">RIR ${s.rir==="F"?"FAIL":s.rir}</span>`:""}
+    </div>`).join("");
+    return `<div class="sum-ex">
+      <div class="sum-ex-head">
+        <span class="sum-ex-name">${esc(ex.name).toUpperCase()}</span>
+        ${isPR?`<span class="b-pr-badge">PR</span>`:""}
+      </div>${setLines}</div>`;
+  }).join("");
+
+  openModal(`
+    <div class="sum-hero">
+      <div class="sum-check">✓</div>
+      <div class="sum-title">${esc(wk.title).toUpperCase()}</div>
+      <div class="sum-sub">${prettyDate(wk.date)}${wk.durationMin?` · ${wk.durationMin} MIN`:""}</div>
+    </div>
+    <div class="sum-stats">
+      <div class="sum-stat"><div class="sum-stat-v">${volStr(wk.volume)}</div><div class="sum-stat-k">TOTAL LOAD</div></div>
+      <div class="sum-stat"><div class="sum-stat-v">${wk.durationMin||"—"}</div><div class="sum-stat-k">MINUTES</div></div>
+      <div class="sum-stat"><div class="sum-stat-v">${totalSets}</div><div class="sum-stat-k">SETS</div></div>
+      <div class="sum-stat"><div class="sum-stat-v">${prs.length||"—"}</div><div class="sum-stat-k">PRs</div></div>
+    </div>
+    ${prs.length?`<div class="sum-pr-row">${prs.map(p=>`<div class="sum-pr-item">🏅 ${esc(p.name).toUpperCase()} — ${liftStr(p.kg)}${p.prev?` <span class="sum-pr-prev">(was ${liftStr(p.prev)})</span>`:""}</div>`).join("")}</div>`:""}
+    <div class="sum-breakdown">
+      <div class="sum-breakdown-hdr">SET LOG</div>
+      ${exRows||`<div class="muted tiny" style="padding:8px 0">No sets logged.</div>`}
+    </div>
+    <div class="sum-actions" style="margin-top:16px">
+      <button class="btn str block" id="wd_repeat">↺ REPEAT THIS SESSION</button>
+      <button class="btn block" id="wd_close" style="margin-top:1px">DONE</button>
+    </div>`);
+  $("#wd_close").addEventListener("click",closeModal);
+  $("#wd_repeat").addEventListener("click",()=>{
+    const exs=wk.exercises.map(e=>({
+      name:e.name, group:e.group,
+      sets:e.sets.map(s=>({kg:s.kg||"",reps:s.reps||"",done:false,warmup:!!s.warmup,rir:null}))
+    }));
+    closeModal();
+    startSession(wk.title+" (REPEAT)","preset",exs);
+  });
 }
 
 /* ===================== TRAIN SCREEN (library) ===================== */
@@ -1665,7 +1764,7 @@ function lastSetFor(name){
       if(s) return s; } }
   return null;
 }
-/* v3.31 — per-exercise "usual" weight & reps, used to pre-fill sets */
+/* v3.71 — per-exercise "usual" weight & reps, used to pre-fill sets */
 function usualFor(name){ const u=DATA.usualSets&&DATA.usualSets[name]; return (u&&(+u.kg>0||+u.reps>0))?u:null; }
 function setUsual(name,kg,reps){
   if(!DATA.usualSets)DATA.usualSets={};
@@ -1755,7 +1854,7 @@ function randomizeFavWorkout(){
   });
 }
 
-/* ===================== ROUTINES — multi-day programs (v3.31) ===================== */
+/* ===================== ROUTINES — multi-day programs (v3.71) ===================== */
 function openRoutinesHub(){
   /* one-time walkthrough the first time Programs is opened */
   if(!DATA.meta) DATA.meta={};
@@ -1822,7 +1921,7 @@ function startRoutineDay(r,i){
 /* working draft while editing a routine */
 let routineDraft=null;
 
-/* v3.31 — starter templates (real machine names; map cleanly via EX_BY_NAME) */
+/* v3.71 — starter templates (real machine names; map cleanly via EX_BY_NAME) */
 const ROUTINE_TEMPLATES=[
   {key:"ppl", name:"Push / Pull / Legs", note:"Classic 3-day split", days:[
     {label:"Push", exercises:["Chest Press Machine","Incline Chest Press Machine","Shoulder Press Machine","Lateral Raise Machine","Tricep Pushdown (Bar)"]},
@@ -1945,7 +2044,7 @@ function openRoutineDayExercises(dayIdx){
   paint();
 }
 
-/* ===================== AI COACH (OpenRouter, user's own key) — v3.31 =====================
+/* ===================== AI COACH (OpenRouter, user's own key) — v3.71 =====================
    Privacy: the API key can be kept for this session only or remembered on this device,
    is never written to any backup (encrypted or CSV) and is never sent anywhere except
    OpenRouter. A summary of the user's training/nutrition is sent to OpenRouter ONLY when
@@ -3494,68 +3593,108 @@ function showFinishSummary(wk,prs,badges){
 function rr(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();}
 function makeFlexCard(wk,prs,badges){
   const draw=()=>{
+  /* ── Brutal share card — matches app design system ──
+     Pure black · Playfair Display serif · bone white · hard lines · no gradients */
   const W=1080,H=1350; const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
   const x=cv.getContext("2d");
-  const BEBAS=`"Bebas Neue", Impact, sans-serif`, INTER=`"Inter", system-ui, sans-serif`;
-  const g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,"#15100b"); g.addColorStop(.55,"#0c0f17"); g.addColorStop(1,"#0a1411");
-  x.fillStyle=g; x.fillRect(0,0,W,H);
-  const rg=x.createRadialGradient(160,180,0,160,180,560); rg.addColorStop(0,"rgba(255,106,44,.55)"); rg.addColorStop(1,"rgba(255,106,44,0)");
-  x.fillStyle=rg; x.fillRect(0,0,W,H);
-  const rg2=x.createRadialGradient(W-120,H-180,0,W-120,H-180,620); rg2.addColorStop(0,"rgba(47,230,168,.42)"); rg2.addColorStop(1,"rgba(47,230,168,0)");
-  x.fillStyle=rg2; x.fillRect(0,0,W,H);
-  x.textAlign="left";
-  /* brand wordmark in Bebas to match the app */
-  x.fillStyle="#fff"; x.font=`96px ${BEBAS}`; x.fillText("EVOLVE", 78, 158);
-  x.fillStyle="rgba(255,255,255,.6)"; x.font=`600 28px ${INTER}`; x.fillText("TRAIN SMARTER · BECOME NEXT", 82, 202);
-  x.fillStyle="#fff";
-  const title=(wk.title||"Workout").toUpperCase();
-  let tsize=108; x.font=`${tsize}px ${BEBAS}`;
-  while(x.measureText(title).width > W-156 && tsize>52){ tsize-=4; x.font=`${tsize}px ${BEBAS}`; }
-  x.fillText(title, 78, 350);
-  x.fillStyle="rgba(255,255,255,.55)"; x.font=`600 34px ${INTER}`; x.fillText(prettyDate(wk.date), 82, 404);
-  /* 2x2 stat grid */
-  const pad=78, gap=28, cardW=(W-pad*2-gap)/2, cardH=210, top=470;
-  function cell(cx,cy,label,val,accent){
-    x.fillStyle="rgba(255,255,255,.06)"; rr(x,cx,cy,cardW,cardH,30); x.fill();
-    x.fillStyle="rgba(255,255,255,.55)"; x.font=`700 28px ${INTER}`; x.textAlign="left"; x.fillText(label,cx+34,cy+62);
-    x.fillStyle=accent||"#FF6A2C"; x.font=`96px ${BEBAS}`; x.fillText(val,cx+32,cy+162);
+  const PLAYFAIR=`"Playfair Display", Georgia, serif`;
+  const INTER=`"Inter", -apple-system, sans-serif`;
+  const INK="#080808", TEXT="#F0EDE8", MUTED="#888888", MUTED2="#333333";
+  const LINE="#1E1E1E", SURFACE="#111111";
+  const PAD=80;
+
+  /* ── background: pure black ── */
+  x.fillStyle=INK; x.fillRect(0,0,W,H);
+
+  /* ── top 4px accent line ── */
+  x.fillStyle=TEXT; x.fillRect(0,0,W,4);
+
+  /* ── EVOLVE wordmark ── */
+  x.textAlign="left"; x.fillStyle=TEXT;
+  x.font=`900 120px ${PLAYFAIR}`; x.fillText("EVOLVE",PAD,152);
+
+  /* ── tagline ── */
+  x.fillStyle=MUTED; x.font=`700 26px ${INTER}`;
+  x.fillText("TRAIN. FUEL. DOMINATE.",PAD,200);
+
+  /* ── divider line ── */
+  x.strokeStyle=LINE; x.lineWidth=1; x.beginPath(); x.moveTo(PAD,220); x.lineTo(W-PAD,220); x.stroke();
+
+  /* ── session title ── */
+  x.fillStyle=TEXT;
+  const title=(wk.title||"SESSION").toUpperCase();
+  let tsize=100; x.font=`900 ${tsize}px ${PLAYFAIR}`;
+  while(x.measureText(title).width > W-PAD*2 && tsize>42){ tsize-=4; x.font=`900 ${tsize}px ${PLAYFAIR}`; }
+  x.fillText(title,PAD,340);
+
+  /* ── date ── */
+  x.fillStyle=MUTED; x.font=`600 30px ${INTER}`;
+  x.fillText(prettyDate(wk.date).toUpperCase(),PAD,392);
+
+  /* ── divider ── */
+  x.strokeStyle=LINE; x.lineWidth=1; x.beginPath(); x.moveTo(PAD,416); x.lineTo(W-PAD,416); x.stroke();
+
+  /* ── 4-cell stat grid — hard rectangles, no radius ── */
+  const cpad=PAD, cgap=4, cW=(W-cpad*2-cgap)/2, cH=194, cTop=440;
+  function cell(cx,cy,label,val){
+    x.fillStyle=SURFACE; x.fillRect(cx,cy,cW,cH);
+    x.strokeStyle=LINE; x.lineWidth=1; x.strokeRect(cx,cy,cW,cH);
+    x.fillStyle=MUTED; x.font=`800 24px ${INTER}`; x.textAlign="left";
+    x.fillText(label.toUpperCase(),cx+28,cy+52);
+    x.fillStyle=TEXT; x.font=`900 ${label.length>8?72:88}px ${PLAYFAIR}`;
+    x.fillText(String(val).toUpperCase(),cx+24,cy+162);
   }
-  cell(pad,        top,          "TOTAL VOLUME", volStr(wk.volume), "#FF6A2C");
-  cell(pad+cardW+gap, top,       "EXERCISES", String(wk.exercises.length), "#5AA9FF");
-  cell(pad,        top+cardH+gap,"TOP LIFT", wk.topKg?liftStr(wk.topKg):"—", "#2FE6A8");
-  cell(pad+cardW+gap, top+cardH+gap, wk.durationMin?"DURATION":"PRS", wk.durationMin?wk.durationMin+" MIN":String(prs.length), "#FFC857");
-  /* PR / streak ribbon */
-  let ry=top+cardH*2+gap*2+30;
-  x.fillStyle="rgba(255,255,255,.06)"; rr(x,pad,ry,W-pad*2,150,30); x.fill();
-  x.textAlign="left"; x.fillStyle="rgba(255,255,255,.55)"; x.font=`700 28px ${INTER}`; x.fillText("THIS SESSION",pad+34,ry+58);
-  x.fillStyle="#fff"; x.font=`600 34px ${INTER}`;
-  const ribbon = (prs.length?`🏅 ${prs.length} PR${prs.length>1?"s":""}   `:"")+`🔥 ${dispWorkoutStreak()} day streak   💪 ${dispWorkouts()} total`;
-  x.fillText(ribbon, pad+34, ry+112);
-  x.fillStyle="rgba(255,255,255,.4)"; x.font=`600 28px ${INTER}`; x.textAlign="center";
-  x.fillText("Created with Evolve", W/2, H-64);
+  cell(cpad,         cTop,          "TOTAL LOAD",  volStr(wk.volume));
+  cell(cpad+cW+cgap, cTop,          "SETS LOGGED", String(wk.exercises.reduce((a,e)=>a+e.sets.filter(s=>!s.warmup&&(+s.kg>0||+s.reps>0)).length,0)));
+  cell(cpad,         cTop+cH+cgap,  "TOP LIFT",    wk.topKg?liftStr(wk.topKg):"—");
+  cell(cpad+cW+cgap, cTop+cH+cgap,  wk.durationMin?"DURATION":"NEW PRs", wk.durationMin?wk.durationMin+" MIN":String(prs.length));
+
+  /* ── PR list ── */
+  let ry=cTop+cH*2+cgap*2+28;
+  if(prs.length){
+    x.strokeStyle=LINE; x.lineWidth=1;
+    x.beginPath(); x.moveTo(PAD,ry-2); x.lineTo(W-PAD,ry-2); x.stroke();
+    x.fillStyle=MUTED; x.font=`800 22px ${INTER}`; x.textAlign="left"; x.fillText("NEW PERSONAL RECORDS",PAD,ry+36);
+    x.fillStyle=TEXT; x.font=`600 28px ${INTER}`;
+    prs.slice(0,3).forEach((p,i)=>{
+      x.fillText(`${p.name.toUpperCase()}  ${liftStr(p.kg)}${p.prev?" ← was "+liftStr(p.prev):""}`, PAD, ry+78+i*44);
+    });
+    ry+=78+Math.min(prs.length,3)*44+20;
+  }
+
+  /* ── streak ribbon ── */
+  x.strokeStyle=LINE; x.lineWidth=1;
+  x.beginPath(); x.moveTo(PAD,ry); x.lineTo(W-PAD,ry); x.stroke();
+  x.fillStyle=SURFACE; x.fillRect(PAD,ry+4,W-PAD*2,130);
+  x.strokeStyle=LINE; x.strokeRect(PAD,ry+4,W-PAD*2,130);
+  x.textAlign="left"; x.fillStyle=MUTED; x.font=`800 22px ${INTER}`; x.fillText("THIS SESSION",PAD+28,ry+50);
+  x.fillStyle=TEXT; x.font=`600 32px ${INTER}`;
+  x.fillText(`${dispWorkoutStreak()} DAY STREAK  ·  ${dispWorkouts()} SESSIONS TOTAL`,PAD+28,ry+102);
+
+  /* ── bottom watermark ── */
+  x.fillStyle=TEXT; x.fillRect(0,H-4,W,4);
+  x.textAlign="center"; x.fillStyle=MUTED2; x.font=`700 24px ${INTER}`;
+  x.fillText("EVOLVE · PRIVATE. OFFLINE. YOURS.",W/2,H-52);
+
   const url=cv.toDataURL("image/png");
-  openModal(`<h3>Your summary card 📸</h3>
-    <img src="${url}" style="width:100%;border-radius:14px;margin:8px 0 12px">
-    <button class="btn str block" id="fc_share">⬇️ Save / share image</button>
-    <p class="muted tiny center" style="margin:10px 2px 0">Tip: tap above to add it to Photos or share it — or just screenshot this card.</p>
-    <button class="btn ghost block" id="fc_close" style="margin-top:12px">Close</button>`);
+  openModal(`<h3 style="margin-bottom:2px">SHARE CARD</h3>
+    <p class="muted tiny" style="margin-bottom:12px;letter-spacing:.06em">Screenshot or save below</p>
+    <img src="${url}" style="width:100%;border-radius:0;margin-bottom:12px;border:1px solid var(--line)">
+    <button class="btn str block" id="fc_share">⬇️ SAVE / SHARE IMAGE</button>
+    <button class="btn ghost block" id="fc_close" style="margin-top:1px">BACK</button>`);
   $("#fc_close").addEventListener("click",()=>showFinishSummary(wk,prs,badges||[]));
   $("#fc_share").addEventListener("click",async()=>{
     try{
       const blob=await (await fetch(url)).blob();
       const file=new File([blob],`evolve-${wk.date}.png`,{type:"image/png"});
       if(navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], title:"My Evolve workout"});
-        return;
+        await navigator.share({files:[file], title:"Evolve session — "+wk.title}); return;
       }
     }catch(e){ if(e&&e.name==="AbortError") return; }
-    /* fallback: open the image full-screen so it can be long-pressed → Save to Photos */
     try{ const w=window.open(); if(w){ w.document.write(`<img src="${url}" style="width:100%">`); w.document.title="Evolve card"; return; } }catch(e){}
-    /* last resort (desktop): direct download */
-    try{ const a=document.createElement("a"); a.href=url; a.download=`evolve-${wk.date}.png`; document.body.appendChild(a); a.click(); a.remove(); }catch(e){ toast("Screenshot this card to save it"); }
+    try{ const a=document.createElement("a"); a.href=url; a.download=`evolve-${wk.date}.png`; document.body.appendChild(a); a.click(); a.remove(); }catch(e){ toast("SCREENSHOT THIS CARD TO SAVE IT"); }
   });
   };
-  /* wait for web fonts so the card text renders in the brand fonts, not a fallback */
   if(document.fonts && document.fonts.ready){
     Promise.race([document.fonts.ready, new Promise(r=>setTimeout(r,800))]).then(draw);
   } else draw();
@@ -5268,8 +5407,8 @@ function renderMore(){
   const photoBtn=$("#profile_photo_card"); if(photoBtn)photoBtn.addEventListener("click",openProfilePhotoPrivacy);
   maybeBackupBanner(b);
 
-  const sec=el("div","notice-card notice-amber");
-  sec.innerHTML=`<div class="notice-title">🔐 Security hardening test build</div><div class="notice-body">Restore/import is stricter in this build, and the AI Coach key can now be kept for this session only.</div>`;
+  const sec=el("div","notice-card notice-blue");
+  sec.innerHTML=`<div class="notice-title">EVOLVE 2.0 PRE-RELEASE</div><div class="notice-body">You're on the pre-release build — ahead of the live 1.0 app. Stricter backup/import validation and more secure AI Coach key storage are active.</div>`;
   sec.style.marginBottom="16px";
   b.appendChild(sec);
 
@@ -5654,7 +5793,7 @@ function renderMore(){
   b.appendChild(made.danger);
   Object.values(made).forEach(s=>s._openIfRemembered());
 
-  b.appendChild(el("div","center muted tiny",`Evolve · EVOLVE · V1.0`));
+  b.appendChild(el("div","center muted tiny",`Evolve · EVOLVE · V2.0`));
   b.lastChild.style.padding="18px 0 4px";
 }
 
@@ -5703,7 +5842,7 @@ async function saveOrShareBlob(blob,name,title="Evolve backup",text="Evolve back
   try{const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500); toast("Backup file saved");}
   catch(e){toast("Couldn't save file here");}
 }
-/* v3.31 — CSV exports (records only; not an encrypted/restorable backup) */
+/* v3.71 — CSV exports (records only; not an encrypted/restorable backup) */
 function _csvCell(v){ const s=String(v==null?"":v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
 function _csvRows(rows){ return rows.map(r=>r.map(_csvCell).join(",")).join("\r\n")+"\r\n"; }
 function exportWorkoutsCSV(){
@@ -5871,14 +6010,27 @@ function renderSplashNews(){
 renderSplashNews();
 function maybeShowSecurityNotice(){
   if((DATA.meta&&DATA.meta.securityNoticeSeen)===SECURITY_NOTICE_VERSION) return;
-  openModal(`<h3>Security hardening test build</h3>
-    <div class="notice-card notice-amber" style="margin-bottom:12px"><div class="notice-title">Heads up</div><div class="notice-body">This test build is intentionally stricter than the 1.0 release.</div></div>
-    <ul class="coach-priv-list" style="margin-top:0">
-      <li>Backup/import/restore validation is stricter. Broken or hand-edited payloads can now be rejected on purpose.</li>
-      <li>The AI Coach key can be stored <b>for this session only</b> or remembered on this device.</li>
-      <li>Service-worker caching is tighter, so stale cross-origin files are less likely to linger.</li>
-    </ul>
-    <button class="btn str block" id="sec_notice_ok">Got it</button>`, {mandatory:false});
+  openModal(`<h3>EVOLVE 2.0 — PRE-RELEASE</h3>
+    <div class="notice-card notice-blue" style="margin-bottom:16px">
+      <div class="notice-title">You're on the pre-release build</div>
+      <div class="notice-body">This version is ahead of the live 1.0 app. Features are complete but may still change before the final 2.0 release.</div>
+    </div>
+    <div class="feat-list" style="margin-bottom:0">
+      <div class="feat-row" style="padding:12px 0;border-bottom:1px solid var(--line)">
+        <span class="feat-name" style="min-width:0;flex:none;font-size:11px;margin-bottom:4px;display:block">WHAT'S NEW</span>
+        <span class="feat-desc" style="font-size:13px">Full brutal redesign — pure black, Playfair Display serif, bone white accent, zero border-radius.</span>
+      </div>
+      <div class="feat-row" style="padding:12px 0;border-bottom:1px solid var(--line)">
+        <span class="feat-desc" style="font-size:13px">Live session clock, mid-session PR alerts, full session summary with set-by-set log, and repeat any session.</span>
+      </div>
+      <div class="feat-row" style="padding:12px 0;border-bottom:1px solid var(--line)">
+        <span class="feat-desc" style="font-size:13px">Home screen shows all past days — browse ← → and tap VIEW to see every set logged.</span>
+      </div>
+      <div class="feat-row" style="padding:12px 0">
+        <span class="feat-desc" style="font-size:13px">Backup, import, and AI Coach key storage are stricter and more secure than 1.0.</span>
+      </div>
+    </div>
+    <button class="btn str block" id="sec_notice_ok" style="margin-top:16px">LET'S GO</button>`, {mandatory:false});
   const btn=$("#sec_notice_ok");
   if(btn) btn.addEventListener("click",()=>{ DATA.meta.securityNoticeSeen=SECURITY_NOTICE_VERSION; save(); closeModal(); });
 }

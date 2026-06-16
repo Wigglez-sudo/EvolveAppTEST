@@ -1,181 +1,65 @@
-<div align="center">
+# Evolve — v2.0 Pre-Release
 
-# 💪 Evolve
+Private, offline-first gym & nutrition tracker. Runs entirely as a PWA — no accounts, no servers, no ads.
 
-### Train smarter · Become next.
+## What's in 2.0
 
-**A private, offline-first gym & nutrition tracker that lives entirely on your device.**
+### Design overhaul
+- Pure `#080808` black — no dark navy, no gradients
+- Playfair Display 900-weight serif for all display headings
+- Single accent: `#F0EDE8` bone white throughout
+- Zero border-radius on every element — hard rectangles everywhere
+- Navigation is a flat bar with a top border, not a floating pill
+- All section labels uppercase at 9px/0.28em tracking
 
-`Version 1.0` · Built by **Wigglez**
+### Train screen
+- Muscle groups are now a vertical list with coloured accent bars (per GROUP_GLOW colours)
+- Preset sessions show muscle descriptions and exercise count badge
+- Exercise picker: scrolling filter tabs, exercises listed as uppercase rows
+- Each exercise row: `?` (form guide), `☆` (star), `+` (add)
 
-</div>
+### Live session
+- Sticky header with session name, sets progress, and live session clock (MM:SS)
+- Done sets collapse to one line — tap to undo
+- Active set has full-width `LOG SET` button (bone white, Playfair)
+- RIR is hidden by default — one tap to expand
+- Mid-session PR alerts: multi-buzz haptic + toast when you beat a previous best
+- PR badge appears inline on done set rows
 
----
+### Session summary
+- Full debrief on finish: total load, minutes, sets logged, new PRs
+- Complete set-by-set log — every exercise, every weight × reps
+- `REPEAT THIS SESSION` rebuilds the exact session for next time
+- Share card redesigned: pure black, Playfair Display, no orange/teal gradients
 
-## 🔐 Test build hardening
+### Home screen
+- Completed sessions section now navigable by day (← → arrows)
+- Tap VIEW on any session to see the full set log and repeat it
 
-This rebuild includes a **security-hardening test pass** over the app shell.
-
-- Added a **Content Security Policy** and a `no-referrer` policy to the runtime page.
-- Tightened **backup/import/restore validation** so malformed or hand-edited payloads can be rejected instead of being merged blindly.
-- Added a **session-only AI Coach key** option (safer) alongside device storage.
-- Tightened **service-worker caching** so only the app shell and Google Fonts are cached.
-- Hardened **food-pack manifest and pack validation** before anything is stored on-device.
-
-Because this is a test build, it is intentionally stricter than the 1.0 release. Some broken or hand-edited backup codes that used to import may now be rejected on purpose.
-
-## 🌟 What is Evolve?
-
-Evolve is a personal **fitness Progressive Web App (PWA)** — a full gym and nutrition tracker that runs in your browser and installs to your home screen like a native app. No accounts, no sign-ups, no ads, no servers. Everything you log stays **on your device**.
-
-It's built for people who want a powerful training and food log *without* handing their data to a company.
-
----
-
-## ✨ Features
-
-### 🏋️ Train
-- **Target a muscle group** — tap Chest, Back, Shoulders, Arms, Legs or Core to auto-build a workout; choose how many exercises, focus a sub-muscle, and swap any you don't like.
-- **📋 Programs (routines)** — save a multi-day plan like **Push / Pull / Legs**, then start any day with one tap. Begin from a ready-made template (PPL, Upper/Lower, Full Body ×3) or build your own.
-- **Mega workouts** — mix several muscle groups (plus optional cardio) into one session.
-- **★ Favourites** — star exercises and build a session from them.
-- **💾 Saved workouts** — save any session (or a Coach-generated one) and reuse it any time from a dedicated section in Train.
-- **Gym / Home modes** — the exercise pool adapts to where you're training.
-- **Live logging** — sets, reps, weights, supersets, rest timer, previous-set hints and quiet progressive-overload nudges.
-
-### 🏃 Cardio
-- Track any cardio activity with live calorie & distance estimates.
-- **Ready, then Start** — a fresh cardio opens on a Ready screen and the timer only begins when you tap **▶ Start**, so you can get set up first.
-- Pause, resume and finish — leave mid-session and it picks up where you left off.
-
-### 🥩 Fuel (nutrition)
-- **Plate-based logging** — add several foods to a running plate, then log the whole meal at once.
-- **Floating ＋** — the Add Food button follows you as you scroll.
-- **Smart portions** — common foods show a sensible portion (1 egg, 1 slice); everything else uses grams, and grams entry is always available.
-- **Typo-friendly search** with your recent & favourite foods on top.
-- **Your own foods** — add custom foods with macros and an optional category.
-- Daily calorie ring and protein / carbs / fat / water targets.
-
-### 📈 Progress
-- **Trends** — bodyweight, lifting volume, and strength per exercise with **estimated 1RM** and a **60–95% training-percentage table** for percentage-based programming.
-- **📸 Progress photos** — a private photo timeline stored **only on your device** (never uploaded, never backed up).
-- **Activity calendar** — full workout, cardio and Mega history; expand any workout to repeat it.
-- **Goals & milestones** — streaks, daily targets and achievements.
-
-### 🤖 AI Coach *(optional)*
-- A dedicated Coach tab powered by **your own** [OpenRouter](https://openrouter.ai) API key (free models available).
-- **Chat** about your training & nutrition, **generate a ready-to-use workout** (Start it now or Save for later), or **analyse your recent logs** — grounded in your actual data.
-- 🔒 **Privacy-first:** this is the *only* feature that sends data off your device, and it tells you exactly what's shared before you enable it. Your API key is stored **only on this device**, is **never** included in any backup, and is never sent anywhere except OpenRouter.
-
-### 🛒 Food packs *(optional)*
-- Add big **UK supermarket food databases** from **Settings → Food packs** — Tesco, Sainsbury's, Asda and Aldi.
-- **Download only the shops you want.** Each pack's foods slot into the **normal categories** (Cheese, Dairy, Fast food & meals…) with the shop's name, and you can **filter your food search by shop**.
-- Packs are stored **on your device** and work **offline** once downloaded.
-- The data is built from [Open Food Facts](https://world.openfoodfacts.org) by a scheduled GitHub Action and served from this repo. The app only **downloads** these public lists — it **never uploads** any of your data.
-
-### ⚙️ Settings & personalisation
-- **🎨 Themes** that recolour the whole app.
-- **🔤 Heading font** — choose **Modern**, **Bold** or **Classic**.
-- Units (kcal/kJ, kg/lb/stone), rest timer length + end beep & flash, keep-screen-awake, water unit, start tab, meal times and more.
-- **Profile photo** — local only, never uploaded.
-
-### 🔐 Backup & privacy
-- **Encrypted backups** — lock your data with a password (AES-GCM via the Web Crypto API), then save or share the file anywhere you like (iCloud, Files, Drive, etc.). Restore with the same password.
-- **Backup reminders** — Off / Daily / Weekly / Biweekly / Monthly, with optional notifications.
-- **CSV export** — export your workouts or food log as a spreadsheet for your own records.
-- **No tracking, no ads, no servers.** Photos and your AI key are device-only and never leave in a backup.
-
----
-
-## 🔒 Privacy by design
-
-Evolve is **offline-first** and stores everything in your browser's local storage on your own device.
-
-- ✅ No account, no login, no email required
-- ✅ No analytics, no tracking, no ads
-- ✅ No backend server — there's nowhere for your data to be sent
-- ✅ Backups are encrypted and only go where *you* choose to put them
-- ⚠️ The **AI Coach** is the single optional exception — it sends your question and a training summary to OpenRouter *only when you ask it to*, and only after you've given clear consent
-
----
-
-## 📲 Install
-
-Evolve is a PWA, so you can install it straight from the browser:
-
-**iPhone / iPad (Safari)**
-1. Open the app's web address in Safari
-2. Tap the **Share** button
-3. Tap **Add to Home Screen**
-
-**Android (Chrome)**
-1. Open the app's web address in Chrome
-2. Tap the **⋮** menu
-3. Tap **Install app** / **Add to Home Screen**
-
-Once installed it runs full-screen and works **offline**.
-
----
-
-## 🛠️ Tech
-
-- **Vanilla JavaScript, HTML & CSS** — no framework, no build step
-- **PWA** with a service worker for offline use and home-screen install
-- **localStorage** for all app data; **Web Crypto API** (AES-GCM + PBKDF2) for encrypted backups
-- **OpenRouter API** for the optional AI Coach (user-supplied key)
-
----
-
-## 📁 Repository contents
+## Files
 
 | File | Purpose |
-| --- | --- |
-| `index.html` | App shell & layout |
-| `styles.css` | All styling |
-| `data.js` | Exercise & food databases |
-| `food-packs.js` | Optional downloadable supermarket food packs (IndexedDB) |
+|---|---|
+| `index.html` | App shell HTML |
 | `app.js` | All app logic |
-| `sw.js` | Service worker (offline cache) |
+| `styles.css` | All styles (brutal design system) |
+| `data.js` | Exercise, cardio, food databases |
+| `food-packs.js` | UK supermarket food packs |
+| `sw.js` | Service worker — cache: `evolve-v3-71` |
 | `manifest.json` | PWA manifest |
-| `icon-*.png`, `apple-touch-icon.png`, `favicon.png` | App icons |
-| `food-db/` | Generated per-shop food packs + manifest (built by the Action) |
-| `tools/` | Open Food Facts build & validation scripts |
-| `.github/workflows/` | Food-database update workflow (monthly + on demand); optional Pages deploy |
-| `Evolve-v1.0-preview.html` | Single-file build regenerated from the current app shell |
-| `tools/validate-app-shell.js` | Sanity-checks core files, syntax and required hardening markers |
 
----
+## Deploy
 
-## 📝 What's new in 1.0
+Drop all files into the repo root, push. The service worker cache key is `evolve-v3-71` — existing users get the update automatically on next open.
 
-After a long beta (the 3.x series), this is Evolve's first full release. Highlights:
+## Design tokens
 
-- 🤖 **AI Coach that builds workouts** — generate a ready-to-use session and Start it now or Save for later
-- 🛒 **Food packs** — optional downloadable UK supermarket databases (Tesco, Sainsbury's, Asda, Aldi) that fold into your food search, offline
-- 💾 **Saved workouts** — a dedicated section in Train for sessions you save or the Coach generates
-- ⚡ **Sets pre-fill themselves** — your usual weight & reps (or last session), so you just tap to confirm
-- 🔄 **In-app updates** — an "Update available" banner; one tap to update
-- 📋 **Routines / Programs** — multi-day plans with starter templates and a walkthrough
-- 🏃 **Cardio Ready screen** — the timer waits until you tap Start
-- 📸 **Progress photos** — private, on-device only
-- 📊 **CSV export** of workouts and food
-- 🔢 **1RM training percentages** (60–95%)
-- 🔤 **Heading font** setting (Modern / Bold / Classic) — defaults to **Classic** (the tall "gym poster" display font); body text stays Inter for readability
-- 📲 **Install prompt** — when opened in a browser, a gentle "Add to home screen" banner helps you install (one-tap on Android, guided steps on iPhone); never shown once installed
-- 🍽️ **Faster food logging** — plate-based, floating Add button, smarter portions, categorised custom foods
-- 🧭 **Cleaner navigation** (Home on the left, Coach on the right) and polish throughout
-
----
-
-<div align="center">
-
-**Evolve** — *Created by Wigglez* 💪
-
-*Private. Offline-first. Yours.*
-
-</div>
-
-
-## Security hotfix test build 1.0.2
-
-This test rebuild tightens plain backup-code restore so imported data is decoded through the same guarded parser used by encrypted restores. It strips dangerous object keys, enforces import size limits, and only merges known Evolve data keys before migration. Service-worker cache is bumped to evolve-v3-62.
+```css
+--ink: #080808        /* page background */
+--text: #F0EDE8       /* primary text + single accent */
+--muted: #909090      /* secondary text */
+--surface: #141414    /* card backgrounds */
+--line: #282828       /* borders */
+--font-disp: "Playfair Display" 900  /* all headings */
+--r: 0px              /* zero border-radius everywhere */
+```

@@ -1,6 +1,13 @@
 /* ===================== EVOLVE ===================== */
 "use strict";
 
+/* boot guard: if data.js didn't load, fail gracefully instead of throwing
+   a wall of "X is not defined" errors against a blank screen. */
+if(typeof MACHINES==="undefined"||typeof FOODS==="undefined"||typeof GROUPS==="undefined"){
+  document.body.innerHTML='<div style="padding:40px 24px;text-align:center;color:#F0EDE8;background:#080808;font-family:Inter,system-ui,sans-serif;min-height:100vh"><div style="font-family:\'Playfair Display\',serif;font-weight:900;font-size:40px;letter-spacing:-.01em">EVOLVE</div><p style="color:#9a9a9a;margin-top:14px;line-height:1.5">Couldn\u2019t load app data. Check your connection and reload.</p></div>';
+  throw new Error("data.js not loaded");
+}
+
 /* ---------- MACHINE LIBRARY (machines only) ---------- */
 function workoutGroupIcon(w){
   const cnt={};
@@ -413,7 +420,19 @@ const $=s=>document.querySelector(s);
   document.addEventListener("wheel", e=>{ if(e.ctrlKey) e.preventDefault(); }, {passive:false});
 })();
 const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
-function toast(msg){const t=$("#toast");t.classList.remove("has-undo");t.textContent=msg;t.classList.add("on");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),2200);}
+function toast(msg){
+  const t=$("#toast");
+  if(t._toasts===undefined) t._toasts=[];
+  t._toasts.push(msg);
+  if(t._toasts.length===1) _showToast(msg);
+  function _showToast(m){
+    t.classList.remove("has-undo"); t.textContent=m; t.classList.add("on");
+    clearTimeout(t._t);
+    t._t=setTimeout(()=>{ t.classList.remove("on"); t._toasts.shift();
+      if(t._toasts.length>0){ setTimeout(()=>_showToast(t._toasts[0]),150); }
+    },2200);
+  }
+}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 
 function getProfilePhoto(){
@@ -553,6 +572,10 @@ function openModal(html, opts){
   w.classList.add("on");
   const x=$("#modalX"); if(x) x.addEventListener("click",()=>closeModal());
   if(!_modalOpen){ _modalOpen=true; try{history.pushState({evolveModal:1},"");}catch(e){} }
+  /* a11y: point the dialog's label at its heading so screen readers announce it */
+  const mh3=$("#modal").querySelector("h3");
+  if(mh3){ if(!mh3.id) mh3.id="modalTitle"; $("#modal").setAttribute("aria-labelledby",mh3.id); }
+  else { $("#modal").removeAttribute("aria-labelledby"); }
 }
 function closeModal(fromPop, force){
   if(liveCardioStop){ const s=liveCardioStop; liveCardioStop=null; s(); }
@@ -2841,6 +2864,7 @@ function loadLive(){ try{ const s=localStorage.getItem(LIVE_KEY); return s?safeJ
 function resumeLive(saved){
   buildState=null; liveSession=saved; stopRest();
   $("#live").classList.add("on");
+  $("#app").setAttribute("aria-hidden","true");
   $("#liveTitle").textContent=saved.title||"SESSION";
   renderLive();
   startSessionClock();
@@ -2863,17 +2887,18 @@ function startSession(title,type,exercises){
   liveSession={title,type,exercises,restSec:(Number(DATA.prefs.restDefault)>0?Number(DATA.prefs.restDefault):90),startedAt:Date.now(),notes:""};
   stopRest();
   $("#live").classList.add("on");
+  $("#app").setAttribute("aria-hidden","true");
   $("#liveTitle").textContent=title;
   renderLive();
   startSessionClock();
   persistLive();
 }
 $("#liveClose").addEventListener("click",()=>{
-  if(!liveSession){ stopRest(); $("#live").classList.remove("on"); return; }
+  if(!liveSession){ stopRest(); $("#live").classList.remove("on"); $("#app").removeAttribute("aria-hidden"); return; }
   const hasData = liveSession.exercises.some(ex=>ex.cardio || (ex.sets||[]).some(s=>s.done||+s.kg>0||+s.reps>0));
   confirmModal({title:"LEAVE SESSION?",danger:true,confirmText:"Leave",
     body:hasData?"Anything you've logged won't be saved. Tap “Finish” instead to keep it.":"You'll lose this session. Tap “Finish” to save it instead.",
-    onConfirm:()=>{ stopRest(); stopSessionClock(); $("#live").classList.remove("on"); liveSession=null; clearLive(); }});
+    onConfirm:()=>{ stopRest(); stopSessionClock(); $("#live").classList.remove("on"); $("#app").removeAttribute("aria-hidden"); liveSession=null; clearLive(); }});
 });
 $("#liveFinish").addEventListener("click",finishWorkout);
 $("#liveFav").addEventListener("click",()=>{
@@ -3495,7 +3520,7 @@ function saveWorkout(s){
   plannedDayRef=null;
   const newBadges=checkBadges();
   save();
-  stopRest(); stopSessionClock(); $("#live").classList.remove("on"); liveSession=null; clearLive();
+  stopRest(); stopSessionClock(); $("#live").classList.remove("on"); $("#app").removeAttribute("aria-hidden"); liveSession=null; clearLive();
   switchTab("home");
   showFinishSummary(wk,prs,newBadges);
 }
@@ -5149,27 +5174,22 @@ function backupReminder(){
   $("#wf_backup").addEventListener("click",()=>{closeModal();setTimeout(()=>{try{openExport();}catch(e){switchTab("more");}},180);});
   $("#wf_later").addEventListener("click",closeModal);
 }
-const LAST_UPDATED="15 June 2026";
-const LATEST_NUM="1.0";
-const LATEST_TITLE="Evolve 1.0 — the full release";
+const LAST_UPDATED="18 June 2026";
+const LATEST_NUM="2.0 pre-release";
+const LATEST_TITLE="Evolve 2.0 — pre-release (UI polish & accessibility)";
 const LATEST_ITEMS=[
-  "<b>🎉 Evolve is 1.0!</b> After a long beta, this is the first full release — a complete, private, offline-first gym &amp; nutrition tracker. Everything below is what's new in 1.0; earlier entries were the beta builds that got us here.",
-  "<b>AI Coach can build your workouts</b> — open the Coach from More → Tools, tap “BUILD A SESSION”, pick the muscle groups and length you want (or let it recommend one), and the AI returns a real, ready-to-use session. <b>Start it now</b> or <b>SAVE FOR LATER</b> — saved ones land in your new Saved workouts list under Train.",
-  "<b>🛒 Food packs (optional)</b> — add big UK supermarket food databases from Settings → Food packs. Pick your shops (Tesco, Sainsbury's, Asda, Aldi) and download only those; their foods slot into the normal categories with the shop name, and you can filter your food search by shop. Downloaded packs live on your device and work offline. They only download public food lists — your data is never uploaded.",
-  "<b>Saved workouts</b> — Train now has a dedicated Saved workouts section. Save any session (tap the ★ during a workout) or a Coach-generated one, and reuse it any time.",
-  "<b>Sets pre-fill themselves</b> — no more typing the same weight &amp; reps every time. New sets start pre-filled with your usual numbers (or your last session if newer); you just tap to confirm each one. Set your usual per exercise from the ⋯ menu. Works for machines, free weights and home moves.",
-  "<b>AI Coach (optional)</b> — connect your own free OpenRouter key to chat about training &amp; nutrition or analyse your logs. It's the only feature that sends data off your device, and it explains exactly what's shared before you enable it; your key stays on this device and is never backed up.",
-  "<b>In-app updates</b> — Evolve updates itself now. When a new version is live you'll get an “Update available” banner; one tap and you're on the latest. There's also a “Check for updates” button in Settings → Help &amp; guide.",
-  "<b>Cleaner navigation</b> — Home now sits on the far left, with a streamlined five-tab layout. AI Coach is accessible from More → Tools.",
-  "<b>Routines (multi-day programs)</b> — build a plan like Push/Pull/Legs under Train → 📋 Programs, then start any day with one tap. Starter templates and a quick walkthrough included.",
-  "<b>Cardio Ready screen</b> — a fresh cardio waits on a Ready screen and only starts timing when you tap ▶ Start.",
-  "<b>Progress photos</b> — a private photo timeline in Progress → Trends, stored only on this device and never uploaded or backed up.",
-  "<b>CSV export</b> — save your workouts or food log as a spreadsheet (Settings → Backup) for your own records.",
-  "<b>1RM training percentages</b> — the strength sheet shows 60–95% of your estimated 1RM for percentage-based programming.",
-  "<b>Choose your heading font</b> — Modern, Bold or Classic in Settings → Preferences.",
-  "<b>Faster food logging</b> — plate-based logging, a floating ＋ Add food button, smarter portions and categorised custom foods.",
-  "<b>Polish &amp; fixes throughout</b> — rest-timer labels, zoom disabled for a native feel, and dozens of refinements from the beta."
+  "<b>The brutal redesign.</b> Pure black canvas, bone-white accent, Playfair Display serif headers and hard-edged rectangles throughout — a colder, more editorial Evolve. Live session clock, mid-session PR alerts, a full set-by-set session summary, and date-navigable home history.",
+  "<b>Accessibility pass.</b> Modals and the live session are now proper dialogs for screen readers, icon-only buttons (close, favourite) have clear labels, and decorative nav icons are hidden from assistive tech.",
+  "<b>Live header fix.</b> Long session names no longer wrap and break the live header — they truncate cleanly on one line.",
+  "<b>Steadier notifications.</b> Toasts now queue instead of cutting each other off, so a “set logged” message and a PR alert won't clobber one another.",
+  "<b>Bigger tap targets</b> on the header icon buttons, and a clean “couldn’t load — reload” message if the app ever fails to load its data.",
+  "<b>Consistent headers.</b> Every screen title now uses the same uppercase editorial styling.",
+  "<i>Pre-release note: this build is ahead of the live 1.0 app. Features are complete but may still change before the final 2.0 release.</i>"
 ];
+const HISTORY_10={num:"1.0",title:"Evolve 1.0 — the full release",items:[
+  "<b>🎉 Evolve hit 1.0</b> — the first full release after a long beta: a complete, private, offline-first gym &amp; nutrition tracker.",
+  "<b>AI Coach builds workouts</b>, <b>Food packs</b> (optional UK supermarket databases), <b>Saved workouts</b>, sets that <b>pre-fill</b> themselves, <b>in-app updates</b>, <b>Routines</b>, a <b>Cardio Ready</b> screen, <b>Progress photos</b>, <b>CSV export</b>, <b>1RM %</b> tables and a cleaner five-tab nav."
+]};
 const HISTORY_BETA={num:"3.x beta",title:"The beta series",items:[
   "Everything below is from Evolve's beta builds (versioned 3.x) — the food logger overhaul, encrypted cloud-safe backups, the redesigned live workout screen, supersets, cardio resume, manual macro targets, Mega workouts, and much more. 1.0 brings it all together as the first full release."
 ]};
@@ -5188,6 +5208,7 @@ function openChangelog(){
     <div class="tiny muted" style="margin:-4px 0 10px">Last updated ${LAST_UPDATED}</div>
     <div style="max-height:62vh;overflow:auto;margin-top:4px">
     ${v(LATEST_NUM,LATEST_TITLE,LATEST_ITEMS)}
+    ${v(HISTORY_10.num,HISTORY_10.title,HISTORY_10.items)}
     ${v(HISTORY_BETA.num,HISTORY_BETA.title,HISTORY_BETA.items)}
     ${v(HISTORY_330.num,HISTORY_330.title,HISTORY_330.items)}
     ${v("3.29-test","Simple encrypted cloud save",[

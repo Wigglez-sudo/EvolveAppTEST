@@ -1,0 +1,222 @@
+[
+  {
+    "viewport": "mobile",
+    "securityChecks": {
+      "coachPoolCount": 145,
+      "coachChestPoolCount": 23,
+      "coachParse": {
+        "title": "Push",
+        "exercises": [
+          {
+            "name": "Chest Press Machine",
+            "group": "Chest",
+            "sets": 3,
+            "reps": "8-12"
+          }
+        ]
+      },
+      "csvFormula": "'=1+1,' +SUM(A1:A2),'\t@cmd,safe\r\n",
+      "cryptoAvailable": false
+    }
+  },
+  {
+    "viewport": "mobile",
+    "screen": "home",
+    "dims": {
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "bodyScrollWidth": 390,
+      "xss": 0,
+      "active": [
+        "view-home"
+      ],
+      "consoleErrors": 0
+    }
+  },
+  {
+    "viewport": "mobile",
+    "screen": "train",
+    "dims": {
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "bodyScrollWidth": 390,
+      "xss": 0,
+      "active": [
+        "view-train"
+      ],
+      "consoleErrors": 0
+    }
+  },
+  {
+    "viewport": "mobile",
+    "screen": "fuel",
+    "dims": {
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "bodyScrollWidth": 390,
+      "xss": 0,
+      "active": [
+        "view-fuel"
+      ],
+      "consoleErrors": 0
+    }
+  },
+  {
+    "viewport": "mobile",
+    "screen": "stats",
+    "dims": {
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "bodyScrollWidth": 390,
+      "xss": 0,
+      "active": [
+        "view-stats"
+      ],
+      "consoleErrors": 0
+    }
+  },
+  {
+    "viewport": "mobile",
+    "screen": "more",
+    "dims": {
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "bodyScrollWidth": 390,
+      "xss": 0,
+      "active": [
+        "view-more"
+      ],
+      "consoleErrors": 0
+    }
+  },
+  {
+    "viewport": "mobile",
+    "screen": "modal_train_group",
+    "error": "TypeError(\"'Locator' object is not callable\")"
+  },
+  {
+    "viewport": "mobile",
+    "screen": "modal_fuel_add",
+    "error": "TypeError(\"'Locator' object is not callable\")"
+  },
+  {
+    "viewport": "mobile",
+    "screen": "modal_more_guide",
+    "error": "TypeError(\"'Locator' object is not callable\")"
+  },
+  {
+    "viewport": "mobile",
+    "console": [],
+    "pageerrors": []
+  },
+  {
+    "viewport": "desktop",
+    "securityChecks": {
+      "coachPoolCount": 145,
+      "coachChestPoolCount": 23,
+      "coachParse": {
+        "title": "Push",
+        "exercises": [
+          {
+            "name": "Chest Press Machine",
+            "group": "Chest",
+            "sets": 3,
+            "reps": "8-12"
+          }
+        ]
+      },
+      "csvFormula": "'=1+1,' +SUM(A1:A2),'\t@cmd,safe\r\n",
+      "cryptoAvailable": false
+    }
+  },
+  {
+    "viewport": "desktop",
+    "screen": "home",
+    "dims": {
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "bodyScrollWidth": 560,
+      "xss": 0,
+      "active": [
+        "view-home"
+      ],
+      "consoleErrors": 0
+    }
+  },
+  {
+    "viewport": "desktop",
+    "screen": "train",
+    "dims": {
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "bodyScrollWidth": 560,
+      "xss": 0,
+      "active": [
+        "view-train"
+      ],
+      "consoleErrors": 0
+    }
+  },
+  {
+    "viewport": "desktop",
+    "screen": "fuel",
+    "dims": {
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "bodyScrollWidth": 560,
+      "xss": 0,
+      "active": [
+        "view-fuel"
+      ],
+      "consoleErrors": 0
+    }
+  },
+  {
+    "viewport": "desktop",
+    "screen": "stats",
+    "dims": {
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "bodyScrollWidth": 560,
+      "xss": 0,
+      "active": [
+        "view-stats"
+      ],
+      "consoleErrors": 0
+    }
+  },
+  {
+    "viewport": "desktop",
+    "screen": "more",
+    "dims": {
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "bodyScrollWidth": 560,
+      "xss": 0,
+      "active": [
+        "view-more"
+      ],
+      "consoleErrors": 0
+    }
+  },
+  {
+    "viewport": "desktop",
+    "screen": "modal_train_group",
+    "error": "TypeError(\"'Locator' object is not callable\")"
+  },
+  {
+    "viewport": "desktop",
+    "screen": "modal_fuel_add",
+    "error": "TypeError(\"'Locator' object is not callable\")"
+  },
+  {
+    "viewport": "desktop",
+    "screen": "modal_more_guide",
+    "error": "TypeError(\"'Locator' object is not callable\")"
+  },
+  {
+    "viewport": "desktop",
+    "console": [],
+    "pageerrors": []
+  }
+]

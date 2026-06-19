@@ -1,8 +1,15 @@
-# Evolve — v2.0 Pre-Release
+# Evolve — v2.0 (final release)
 
-Private, offline-first gym & nutrition tracker. Runs entirely as a PWA — no accounts, no servers, no ads.
+Private, offline-first gym & nutrition tracker. Runs as a static PWA: no accounts, no app server, no ads, and personal training/nutrition data stays in browser storage unless the user explicitly exports/shares it.
 
-## What's in 2.0
+## Current build
+
+- App version: `2.0.0`
+- Service-worker cache key: `evolve-v3-76`
+- Security notice version: `2026-06-2.0-release`
+- Release date: 2026-06-19
+
+## What's in this release
 
 ### Design overhaul
 - Pure `#080808` black — no dark navy, no gradients
@@ -12,45 +19,77 @@ Private, offline-first gym & nutrition tracker. Runs entirely as a PWA — no ac
 - Navigation is a flat bar with a top border, not a floating pill
 - All section labels uppercase at 9px/0.28em tracking
 
+### Audit hardening
+- CSV exports now prefix spreadsheet-dangerous cells so user-controlled names cannot become Excel/Sheets formulas.
+- AI Coach workout generation now receives a real exercise allow-list, with optional muscle-group filtering.
+- Optional generated food packs no longer make local validation fail when the checkout contains only `food-db/README.md`.
+- Modal focus is managed and trapped while dialogs are open; Escape dismisses non-mandatory dialogs.
+- Service-worker cache/version references are consistent across runtime docs.
+
 ### Train screen
-- Muscle groups are now a vertical list with coloured accent bars (per GROUP_GLOW colours)
-- Preset sessions show muscle descriptions and exercise count badge
-- Exercise picker: scrolling filter tabs, exercises listed as uppercase rows
-- Each exercise row: `?` (form guide), `☆` (star), `+` (add)
+- Muscle groups are a vertical list with coloured accent bars.
+- Preset sessions show muscle descriptions and exercise count badges.
+- Exercise picker has scrolling filter tabs and uppercase exercise rows.
+- Each exercise row exposes form guide, favourite, and add controls.
 
 ### Live session
-- Sticky header with session name, sets progress, and live session clock (MM:SS)
-- Done sets collapse to one line — tap to undo
-- Active set has full-width `LOG SET` button (bone white, Playfair)
-- RIR is hidden by default — one tap to expand
-- Mid-session PR alerts: multi-buzz haptic + toast when you beat a previous best
-- PR badge appears inline on done set rows
+- Sticky header with session name, sets progress, and live session clock.
+- Done sets collapse to one line and can be tapped to undo.
+- Active set has a full-width `LOG SET` button.
+- RIR is hidden by default and expands on demand.
+- Mid-session PR alerts use haptic/toast feedback and inline PR badges.
 
 ### Session summary
-- Full debrief on finish: total load, minutes, sets logged, new PRs
-- Complete set-by-set log — every exercise, every weight × reps
-- `REPEAT THIS SESSION` rebuilds the exact session for next time
-- Share card redesigned: pure black, Playfair Display, no orange/teal gradients
+- Finish screen shows total load, minutes, logged sets, and new PRs.
+- Complete set-by-set log is retained.
+- `REPEAT THIS SESSION` rebuilds the same session for next time.
+- Share card uses the black/bone-white design language.
 
 ### Home screen
-- Completed sessions section now navigable by day (← → arrows)
-- Tap VIEW on any session to see the full set log and repeat it
+- Completed sessions are navigable by day.
+- Tap `VIEW` on any session to see the full set log and repeat it.
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `index.html` | App shell HTML |
-| `app.js` | All app logic |
-| `styles.css` | All styles (brutal design system) |
-| `data.js` | Exercise, cardio, food databases |
-| `food-packs.js` | UK supermarket food packs |
-| `sw.js` | Service worker — cache: `evolve-v3-71` |
-| `manifest.json` | PWA manifest |
+| `index.html` | App shell HTML and CSP meta policy |
+| `app.js` | Main app logic, storage, UI rendering, Coach, backup/export |
+| `styles.css` | Brutal design system styles |
+| `data.js` | Exercise, cardio, food, goals, and static app data |
+| `food-packs.js` | Optional IndexedDB-backed UK supermarket food packs |
+| `sw.js` | Service worker — cache: `evolve-v3-76` |
+| `manifest.json` | PWA manifest — version: `2.0.0` |
+| `tools/validate-app-shell.js` | Local/CI app-shell validation |
+| `tools/validate-food-db.js` | Generated food-pack validation |
+| `SECURITY.md` | Security model and audit changes |
+| `CHANGELOG.md` | Release/audit history |
+| `EVOLVE_AUDIT_REPORT_2026-06-19.md` | Standalone audit report |
+| `EVOLVE_HANDOFF.txt` | Operator handoff notes |
 
 ## Deploy
 
-Drop all files into the repo root, push. The service worker cache key is `evolve-v3-71` — existing users get the update automatically on next open.
+1. Replace the repository root with this package.
+2. Push to the `main` branch.
+3. In GitHub Pages settings, use **GitHub Actions** as the Pages source.
+4. The service worker cache key is `evolve-v3-76`; installed clients should see the update banner or refresh to the new shell after the new worker activates.
+5. Test in iOS Safari from the home-screen PWA icon and Android Chrome install mode.
+
+## Local validation
+
+```bash
+node --check app.js
+node --check data.js
+node --check food-packs.js
+node --check sw.js
+node --check tools/validate-app-shell.js
+node --check tools/validate-food-db.js
+node --check tools/build-openfoodfacts-uk-db.js
+node tools/validate-app-shell.js
+node tools/validate-food-db.js --report
+```
+
+`tools/validate-food-db.js --report` exits successfully when no generated `food-db/manifest.json` or shop JSON files exist, because food packs are optional and normally generated by the workflow.
 
 ## Design tokens
 

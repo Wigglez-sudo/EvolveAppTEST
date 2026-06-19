@@ -33,7 +33,15 @@ function validateItem(it, where) {
 function main() {
   if (!fs.existsSync(DIR)) { console.error("No food-db/ directory — nothing to validate (run the build first)."); process.exit(0); }
   const manPath = path.join(DIR, "manifest.json");
-  if (!fs.existsSync(manPath)) { console.error("No manifest.json"); process.exit(1); }
+  if (!fs.existsSync(manPath)) {
+    const generatedPacks = fs.readdirSync(DIR).filter(f => /\.json$/i.test(f));
+    if (!generatedPacks.length) {
+      console.log("No generated food-db manifest or shop JSON files — optional food packs are not built in this checkout; skipping.");
+      process.exit(0);
+    }
+    console.error("No manifest.json, but generated JSON pack files exist; rebuild or restore food-db/manifest.json.");
+    process.exit(1);
+  }
 
   let man;
   try { man = JSON.parse(fs.readFileSync(manPath, "utf8")); }

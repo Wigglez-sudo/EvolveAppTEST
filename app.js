@@ -124,7 +124,7 @@ const MAX_STATE_BYTES=4.5*1024*1024;
 const MAX_IMPORT_BYTES=4*1024*1024;
 const MAX_IMAGE_FILE_BYTES=15*1024*1024;
 const MAX_PROGRESS_PHOTOS=60;
-const SECURITY_NOTICE_VERSION="2026-06-prerelease-2";
+const SECURITY_NOTICE_VERSION="2026-06-2.0-release";
 const DEFAULT_DATA = {
   profile:null, /* {name,sex,age,heightCm,weightKg,activity,goal,goalWeightKg} */
   targets:null, /* {calories,protein,carbs,fat,water} */
@@ -553,12 +553,13 @@ function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor
 
 /* modal system — every modal gets a sticky × close button and is dismissable
    via the × , the dimmed background, or the device/gesture Back button. */
-let _modalOpen=false, _ignorePop=false, _modalLocked=false;
+let _modalOpen=false, _ignorePop=false, _modalLocked=false, _modalLastFocus=null;
 let liveCardioStop=null; /* set while a live cardio timer runs; closeModal() calls it so the interval can't be orphaned */
 function openModal(html, opts){
   opts=opts||{};
   _modalLocked=!!opts.mandatory;
   const w=$("#modalWrap");
+  if(!_modalOpen) _modalLastFocus=document.activeElement;
   /* if the splash is still showing, the modal (z-index 180) would open BEHIND
      it (z-index 200) and be invisible until the splash is dismissed. Lift the
      modal above the splash in that case; restored on close. */
@@ -576,6 +577,11 @@ function openModal(html, opts){
   const mh3=$("#modal").querySelector("h3");
   if(mh3){ if(!mh3.id) mh3.id="modalTitle"; $("#modal").setAttribute("aria-labelledby",mh3.id); }
   else { $("#modal").removeAttribute("aria-labelledby"); }
+  requestAnimationFrame(()=>{
+    const m=$("#modal"); if(!m) return;
+    const f=m.querySelector('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');
+    try{ (f||m).focus({preventScroll:true}); }catch(e){}
+  });
 }
 function closeModal(fromPop, force){
   if(liveCardioStop){ const s=liveCardioStop; liveCardioStop=null; s(); }
@@ -589,9 +595,25 @@ function closeModal(fromPop, force){
   const wasOpen=_modalOpen; _modalOpen=false; _modalLocked=false;
   w.classList.remove("on");
   w.style.zIndex=""; /* clear any splash-time lift */
+  if(_modalLastFocus && typeof _modalLastFocus.focus==="function"){
+    try{ _modalLastFocus.focus({preventScroll:true}); }catch(e){}
+  }
+  _modalLastFocus=null;
   if(wasOpen && !fromPop && history.state && history.state.evolveModal){ _ignorePop=true; try{history.back();}catch(e){ _ignorePop=false; } }
 }
 $("#modalBg").addEventListener("click",()=>closeModal());
+document.addEventListener("keydown",e=>{
+  if(!_modalOpen) return;
+  if(e.key==="Escape"){ e.preventDefault(); closeModal(); return; }
+  if(e.key==="Tab"){
+    const m=$("#modal"); if(!m) return;
+    const fs=[...m.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(x=>!x.disabled && x.offsetParent!==null);
+    if(!fs.length){ e.preventDefault(); try{m.focus();}catch(_){} return; }
+    const first=fs[0], last=fs[fs.length-1];
+    if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+  }
+});
 window.addEventListener("popstate",()=>{
   if(_ignorePop){ _ignorePop=false; return; }
   if(_modalOpen) closeModal(true);
@@ -2231,7 +2253,7 @@ function openCoachKeySetup(onDone){
     const mode=getCoachKeyMode();
     openModal(`<h3>Connect OpenRouter</h3>
       <p class="muted tiny" style="line-height:1.5;margin-bottom:12px">The Coach uses <b>OpenRouter</b>, which gives access to many AI models with one key — including free ones. Create a free key at <b>openrouter.ai/keys</b>, then paste it below.</p>
-      <div class="notice-card notice-amber" style="margin-bottom:12px"><div class="notice-title">🔐 Test-build privacy hardening</div><div class="notice-body">Choose whether your key is kept <b>for this session only</b> or remembered <b>on this device</b>. Session-only is the safer option.</div></div>
+      <div class="notice-card notice-amber" style="margin-bottom:12px"><div class="notice-title">🔐 Privacy: choose your key storage</div><div class="notice-body">Choose whether your key is kept <b>for this session only</b> or remembered <b>on this device</b>. Session-only is the safer option.</div></div>
       <div class="field"><label>OpenRouter API key</label><input class="input" id="coach_key" type="password" placeholder="sk-or-..." value="${esc(getCoachKey())}" autocomplete="off"></div>
       <div class="field"><label>Key storage</label>
         <div class="seg scroll" id="coach_key_mode">
@@ -2389,10 +2411,19 @@ async function coachAction(kind){
 }
 
 /* ---- structured workout generation: AI returns JSON the app can turn into a real workout ---- */
-function coachExercisePool(){
-  /* the names the AI is allowed to choose from, matched to what's in the app */
-  try{ return (typeof gymPoolNames==="function")?gymPoolNames():Object.keys(EX_BY_NAME||{}); }
-  catch(e){ return Object.keys(EX_BY_NAME||{}); }
+function coachExercisePool(groups){
+  /* the names the AI is allowed to choose from, matched to what's in the app.
+     If groups are supplied, keep the prompt focused; otherwise expose the full
+     exercise library. The old no-arg gymPoolNames() call returned an empty list. */
+  try{
+    const all=Object.keys(EX_BY_NAME||{});
+    if(Array.isArray(groups) && groups.length){
+      const want=new Set(groups);
+      const filtered=all.filter(n=>want.has((EX_BY_NAME[n]||{}).g));
+      return filtered.length?filtered:all;
+    }
+    return all;
+  }catch(e){ return []; }
 }
 function coachMatchExercise(name){
   if(!name) return null;
@@ -2410,11 +2441,11 @@ function coachMatchExercise(name){
 }
 async function coachGenerateWorkout(opts){
   opts=opts||{};
-  const pool=coachExercisePool();
-  /* cap the list we send so the prompt isn't huge, but include a good spread */
-  const allowed=pool.slice(0,180);
   /* translate the user's choices into prompt instructions */
   const groups=(opts.groups&&opts.groups.length)?opts.groups:null;
+  const pool=coachExercisePool(groups);
+  /* cap the list we send so the prompt isn't huge, but include a good spread */
+  const allowed=pool.slice(0,180);
   const sizeMap={quick:"3 to 4 exercises (a short, quick session)",standard:"5 to 6 exercises (a standard session)",full:"7 to 8 exercises (a long, full session)"};
   const sizeText=sizeMap[opts.size]||"4 to 7 exercises";
   let focusText;
@@ -5174,17 +5205,17 @@ function backupReminder(){
   $("#wf_backup").addEventListener("click",()=>{closeModal();setTimeout(()=>{try{openExport();}catch(e){switchTab("more");}},180);});
   $("#wf_later").addEventListener("click",closeModal);
 }
-const LAST_UPDATED="18 June 2026";
-const LATEST_NUM="2.0 pre-release";
-const LATEST_TITLE="Evolve 2.0 — pre-release (UI polish & accessibility)";
+const LAST_UPDATED="19 June 2026";
+const LATEST_NUM="2.0";
+const LATEST_TITLE="Evolve 2.0 — the full release";
 const LATEST_ITEMS=[
   "<b>The brutal redesign.</b> Pure black canvas, bone-white accent, Playfair Display serif headers and hard-edged rectangles throughout — a colder, more editorial Evolve. Live session clock, mid-session PR alerts, a full set-by-set session summary, and date-navigable home history.",
-  "<b>Accessibility pass.</b> Modals and the live session are now proper dialogs for screen readers, icon-only buttons (close, favourite) have clear labels, and decorative nav icons are hidden from assistive tech.",
+  "<b>Accessibility pass.</b> Modals and the live session are now proper dialogs for screen readers, icon-only buttons (close, favourite) have clear labels, decorative nav icons are hidden from assistive tech, and modal focus is now managed/trapped.",
+  "<b>Security hardening.</b> Encrypted backups now use stronger key stretching (PBKDF2-SHA256 at 600,000 iterations, with older backups still restorable), CSV exports are spreadsheet-safe, and AI Coach workout generation gets a real exercise allow-list.",
   "<b>Live header fix.</b> Long session names no longer wrap and break the live header — they truncate cleanly on one line.",
   "<b>Steadier notifications.</b> Toasts now queue instead of cutting each other off, so a “set logged” message and a PR alert won't clobber one another.",
   "<b>Bigger tap targets</b> on the header icon buttons, and a clean “couldn’t load — reload” message if the app ever fails to load its data.",
-  "<b>Consistent headers.</b> Every screen title now uses the same uppercase editorial styling.",
-  "<i>Pre-release note: this build is ahead of the live 1.0 app. Features are complete but may still change before the final 2.0 release.</i>"
+  "<b>Consistent headers.</b> Every screen title now uses the same uppercase editorial styling."
 ];
 const HISTORY_10={num:"1.0",title:"Evolve 1.0 — the full release",items:[
   "<b>🎉 Evolve hit 1.0</b> — the first full release after a long beta: a complete, private, offline-first gym &amp; nutrition tracker.",
@@ -5429,7 +5460,7 @@ function renderMore(){
   maybeBackupBanner(b);
 
   const sec=el("div","notice-card notice-blue");
-  sec.innerHTML=`<div class="notice-title">EVOLVE 2.0 PRE-RELEASE</div><div class="notice-body">You're on the pre-release build — ahead of the live 1.0 app. Stricter backup/import validation and more secure AI Coach key storage are active.</div>`;
+  sec.innerHTML=`<div class="notice-title">EVOLVE 2.0</div><div class="notice-body">The full 2.0 release. Stronger backup encryption (PBKDF2 600,000 iterations), stricter backup/import validation, and more secure AI Coach key storage are active.</div>`;
   sec.style.marginBottom="16px";
   b.appendChild(sec);
 
@@ -5830,24 +5861,33 @@ function backupCode(){ return "EVOLVE1:"+bytesToB64(new TextEncoder().encode(JSO
 function bytesToB64(bytes){let bin=""; const chunk=0x8000; for(let i=0;i<bytes.length;i+=chunk){bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));} return btoa(bin);}
 function b64ToBytes(b64){const bin=atob(b64); const out=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i); return out;}
 function backupCryptoReady(){return !!(window.crypto&&crypto.subtle&&window.TextEncoder&&window.TextDecoder);}
-async function deriveBackupKey(password,salt){
+/* PBKDF2 cost. New backups are written at PBKDF2_ITERATIONS; older backups carry
+   their own count in the envelope and are decrypted with whatever they recorded, so
+   raising this never locks anyone out of an existing backup. */
+const PBKDF2_ITERATIONS=600000;
+const LEGACY_PBKDF2_ITERATIONS=210000; /* assumed for any envelope missing an iteration count */
+async function deriveBackupKey(password,salt,iterations){
+  const iters=Number(iterations)>0?Number(iterations):PBKDF2_ITERATIONS;
   const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(password),"PBKDF2",false,["deriveKey"]);
-  return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:210000,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:iters,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
 }
 async function makeEncryptedBackupText(password){
   if(!backupCryptoReady()) throw new Error("Encryption is not available in this browser");
   const salt=crypto.getRandomValues(new Uint8Array(16));
   const iv=crypto.getRandomValues(new Uint8Array(12));
-  const key=await deriveBackupKey(password,salt);
+  const key=await deriveBackupKey(password,salt,PBKDF2_ITERATIONS);
   const plain=new TextEncoder().encode(JSON.stringify(cleanBackupData()));
   const cipher=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,plain));
-  return JSON.stringify({type:"EVOLVE_ENCRYPTED_BACKUP",version:1,app:"Evolve",created:new Date().toISOString(),kdf:"PBKDF2-SHA256",iterations:210000,cipher:"AES-GCM",salt:bytesToB64(salt),iv:bytesToB64(iv),data:bytesToB64(cipher)},null,2);
+  return JSON.stringify({type:"EVOLVE_ENCRYPTED_BACKUP",version:1,app:"Evolve",created:new Date().toISOString(),kdf:"PBKDF2-SHA256",iterations:PBKDF2_ITERATIONS,cipher:"AES-GCM",salt:bytesToB64(salt),iv:bytesToB64(iv),data:bytesToB64(cipher)},null,2);
 }
 async function decryptEncryptedBackupText(text,password){
   const box=safeParseJsonText(text,MAX_IMPORT_BYTES,"Encrypted backup");
   if(!box||box.type!=="EVOLVE_ENCRYPTED_BACKUP") throw new Error("not-evolve-encrypted");
   if(typeof box.salt!=="string" || typeof box.iv!=="string" || typeof box.data!=="string") throw new Error("bad-backup");
-  const key=await deriveBackupKey(password,b64ToBytes(box.salt));
+  /* decrypt with the count the backup was written with (older backups = 210k) so
+     raising the default doesn't break restoring an existing file. */
+  const iters=Number(box.iterations)>0?Number(box.iterations):LEGACY_PBKDF2_ITERATIONS;
+  const key=await deriveBackupKey(password,b64ToBytes(box.salt),iters);
   const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64ToBytes(box.iv)},key,b64ToBytes(box.data));
   const obj=normalizeStoredData(safeParseJsonText(new TextDecoder().decode(plain),MAX_IMPORT_BYTES,"Decrypted backup"));
   if(!obj||typeof obj!=="object"||!("workouts" in obj)) throw new Error("bad-backup");
@@ -5863,8 +5903,16 @@ async function saveOrShareBlob(blob,name,title="Evolve backup",text="Evolve back
   try{const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500); toast("Backup file saved");}
   catch(e){toast("Couldn't save file here");}
 }
-/* v3.71 — CSV exports (records only; not an encrypted/restorable backup) */
-function _csvCell(v){ const s=String(v==null?"":v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+/* v3.74 — CSV exports (records only; not an encrypted/restorable backup). */
+function _csvSafeForSpreadsheet(s){
+  /* Prevent CSV/Excel formula injection when user-controlled names start with
+     =, +, -, or @, including whitespace/tab/CR-prefixed variants. */
+  return /^[\s\t\r]*[=+\-@]/.test(s) ? "'" + s : s;
+}
+function _csvCell(v){
+  const s=_csvSafeForSpreadsheet(String(v==null?"":v));
+  return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+}
 function _csvRows(rows){ return rows.map(r=>r.map(_csvCell).join(",")).join("\r\n")+"\r\n"; }
 function exportWorkoutsCSV(){
   const rows=[["Date","Workout","Type","Exercise","Set","Weight ("+liftUnit()+")","Reps","WARM-UP","Volume ("+liftUnit()+")"]];
@@ -6031,10 +6079,10 @@ function renderSplashNews(){
 renderSplashNews();
 function maybeShowSecurityNotice(){
   if((DATA.meta&&DATA.meta.securityNoticeSeen)===SECURITY_NOTICE_VERSION) return;
-  openModal(`<h3>EVOLVE 2.0 — PRE-RELEASE</h3>
+  openModal(`<h3>WELCOME TO EVOLVE 2.0</h3>
     <div class="notice-card notice-blue" style="margin-bottom:16px">
-      <div class="notice-title">You're on the pre-release build</div>
-      <div class="notice-body">This version is ahead of the live 1.0 app. Features are complete but may still change before the final 2.0 release.</div>
+      <div class="notice-title">Evolve 2.0 is here</div>
+      <div class="notice-body">A full redesign of the private, offline-first gym &amp; nutrition tracker — with stronger backup encryption and a polished, more accessible interface.</div>
     </div>
     <div class="feat-list" style="margin-bottom:0">
       <div class="feat-row" style="padding:12px 0;border-bottom:1px solid var(--line)">
@@ -6048,7 +6096,7 @@ function maybeShowSecurityNotice(){
         <span class="feat-desc" style="font-size:13px">Home screen shows all past days — browse ← → and tap VIEW to see every set logged.</span>
       </div>
       <div class="feat-row" style="padding:12px 0">
-        <span class="feat-desc" style="font-size:13px">Backup, import, and AI Coach key storage are stricter and more secure than 1.0.</span>
+        <span class="feat-desc" style="font-size:13px">Backup encryption is stronger (PBKDF2 600,000 iterations), and import &amp; AI Coach key storage are stricter than 1.0.</span>
       </div>
     </div>
     <button class="btn str block" id="sec_notice_ok" style="margin-top:16px">LET'S GO</button>`, {mandatory:false});

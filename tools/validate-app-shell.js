@@ -48,6 +48,16 @@ if(!/COACH_KEY_MODE_KEY/.test(app)) fail("app.js missing session/device Coach ke
 else ok("app.js includes Coach key mode support");
 if(!/MAX_IMPORT_BYTES/.test(app)) fail("app.js missing stricter import size limits");
 else ok("app.js includes stricter import size limits");
+if(!/_csvSafeForSpreadsheet/.test(app)) fail("app.js missing spreadsheet-safe CSV export guard");
+else ok("app.js includes spreadsheet-safe CSV export guard");
+if(!/coachExercisePool\(groups\)/.test(app)) fail("app.js missing group-aware Coach exercise pool");
+else ok("app.js includes group-aware Coach exercise pool");
+/* backup KDF must be at least 600k iterations (raised from 210k in audit.2) */
+var pbMatch=app.match(/PBKDF2_ITERATIONS\s*=\s*(\d+)/);
+if(!pbMatch || Number(pbMatch[1])<600000) fail("app.js PBKDF2_ITERATIONS missing or below 600000");
+else ok("app.js PBKDF2_ITERATIONS is "+pbMatch[1]+" (>=600000)");
+if(!/evolve-v3-76/.test(read("sw.js"))) fail("sw.js cache key was not bumped to evolve-v3-76");
+else ok("sw.js cache key is evolve-v3-76");
 
 if(errors){
   console.error(`\n${errors} validation error(s).`);

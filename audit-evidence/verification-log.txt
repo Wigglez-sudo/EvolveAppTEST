@@ -1,0 +1,55 @@
+Verification run: 2026-06-19
+
+Commands:
+node --check app.js
+node --check data.js
+node --check food-packs.js
+node --check sw.js
+node --check tools/validate-app-shell.js
+node --check tools/validate-food-db.js
+node --check tools/build-openfoodfacts-uk-db.js
+node tools/validate-app-shell.js
+node tools/validate-food-db.js --report
+
+Result:
+- All node --check syntax checks passed.
+- App-shell validator passed and confirmed CSP/referrer policy, tightened service-worker allowlist, test-build security notice, Coach key mode support, import size limits, spreadsheet-safe CSV guard, group-aware Coach exercise pool, and service-worker cache key evolve-v3-74.
+- Food DB validator skipped clean checkout without generated packs, as intended.
+
+Rendered harness result summary:
+- Headless Chromium inline harness rendered populated Home/Train/Fuel/Stats/More on 390px mobile and 1280px desktop.
+- No console errors or page errors were captured.
+- scrollWidth equalled innerWidth for the populated screens checked.
+- XSS probe counter stayed 0.
+- CSV formula escaping, Coach exercise pool, and Coach parse checks passed.
+
+Known limitations:
+- Direct page.goto/local HTTP navigation was blocked by the execution environment.
+- WebCrypto dynamic wrong-password/tamper probes were not runnable in the opaque inline harness.
+- Full dynamic traversal of every modal/interaction was not completed; central modal code was fixed and statically verified.
+
+──────────────────────────────────────────────────────────
+FOLLOW-UP PASS — 2.0.0-audit.2 (crypto hardening)
+──────────────────────────────────────────────────────────
+Trigger: prior pass reported the backup KDF at 210,000 iterations without flagging
+it as weak, and deferred dynamic crypto testing as "crypto.subtle unavailable".
+
+Changes:
+- PBKDF2 iterations 210,000 -> 600,000 (deriveBackupKey / makeEncryptedBackupText).
+- deriveBackupKey now takes an iteration count; decrypt reads it from the envelope
+  (LEGACY fallback 210,000) so older backups still open.
+- SECURITY.md, CHANGELOG.md, EVOLVE_HANDOFF.txt, audit report, manifest.json (version),
+  sw.js (cache evolve-v3-75), and tools/validate-app-shell.js updated.
+
+Dynamic crypto verification (Node crypto.webcrypto.subtle — IS available here):
+  PASS new backup records 600000 iterations
+  PASS new backup round-trips
+  PASS wrong password rejected (new)
+  PASS tampered ciphertext rejected (new)
+  PASS OLD 210k backup still decrypts        <- backward compatibility
+  PASS backup with NO iterations field falls back to 210k & decrypts
+  PASS random salt per backup
+  => 7/7 passed
+
+Validators re-run: node --check (all files) OK; validate-app-shell.js all checks
+passed (incl. PBKDF2 >=600000 and cache evolve-v3-75); validate-food-db.js optional-skip OK.
